@@ -18,7 +18,7 @@ namespace RoiUp\Zoom\Listeners;
     private $actions = ['Created', 'Approved', 'Cancelled', 'Denied'];
 
     /**
-     * Handle meeting created events.
+     * Handle registrant created events.
      */
     public function onRegistrantCreated(MeetingRegistrantCreated $event) {
 
@@ -28,7 +28,7 @@ namespace RoiUp\Zoom\Listeners;
     }
 
     /**
-     * Handle meeting deleted events.
+     * Handle registrant approved events.
      */
     public function onRegistrantApproved(MeetingRegistrantApproved $event) {
 
@@ -38,7 +38,7 @@ namespace RoiUp\Zoom\Listeners;
     }
 
     /**
-     * Handle meeting updated events.
+     * Handle registrant cancelled events.
      */
     public function onRegistrantCancelled(MeetingRegistrantCancelled $event) {
 
@@ -48,7 +48,7 @@ namespace RoiUp\Zoom\Listeners;
     }
 
     /**
-     * Handle meeting started events.
+     * Handle registrant denied events.
      */
     public function onRegistrantDenied(MeetingRegistrantDenied $event) {
 
