@@ -1,0 +1,31 @@
+{
+    "name": "roi-up-agency/laravel-zoom",
+    "description": "Zoom Wrapper for Laravel",
+    "homepage": "https://github.com/roi-up-agency/zoom",
+    "keywords": ["zoom", "api", "client"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Juan Solá",
+            "email": "devs@roi-up.es"
+        }
+    ],
+    "require": {
+        "php": "^7.0", 
+        "guzzlehttp/guzzle": "~6.0|~5.0|~4.0",
+        "firebase/php-jwt": "^5.0"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "RoiUp\\Zoom\\ZoomServiceProvider"
+            ]
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "RoiUp\\Zoom\\": "/src"
+        }
+    },
+    "minimum-stability" : "dev"
+}
