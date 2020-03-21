@@ -47,6 +47,7 @@ namespace RoiUp\Zoom\Listeners;
         $this->logFinishEvent();
     }
 
+    
     /**
      * Handle registrant denied events.
      */
