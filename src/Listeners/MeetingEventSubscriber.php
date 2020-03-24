@@ -7,6 +7,7 @@ namespace RoiUp\Zoom\Listeners;
  use RoiUp\Zoom\Events\Meeting\MeetingUpdated;
  use RoiUp\Zoom\Events\Meeting\MeetingStarted;
  use RoiUp\Zoom\Events\Meeting\MeetingEnded;
+ use RoiUp\Zoom\Models\Eloquent\Meeting;
 
  class MeetingEventSubscriber extends AbstractEventSubscriber
 {
@@ -20,9 +21,10 @@ namespace RoiUp\Zoom\Listeners;
 
         $this->logEvent($event);
 
-        $meeting = new \RoiUp\Zoom\Models\Zoom\Meeting();
-        $meeting->create((array)$event->getObject());
-        dd($meeting);
+        $model = Meeting::whereZoomId($event->getObject()->id)->first();
+        $model->status = 'created';
+        $model->save();
+
         $this->logFinishEvent();
     }
 
@@ -32,7 +34,19 @@ namespace RoiUp\Zoom\Listeners;
     public function onMeetingDeleted(MeetingDeleted $event) {
 
         $this->logEvent($event);
+        $meeting = new \RoiUp\Zoom\Models\Zoom\Meeting();
+        $meeting->create((array)$event->getObject());
 
+        $model = Meeting::whereZoomId($event->getObject()->id)->first();
+        $model->occurrences->each(function($item){
+            $item->registrants->each(function($registrant){
+                //TODO Send notification
+                $registrant->delete();
+            });
+            $item->delete();
+        });
+
+        $model->delete();
         $this->logFinishEvent();
     }
 
@@ -42,7 +56,7 @@ namespace RoiUp\Zoom\Listeners;
     public function onMeetingUpdated(MeetingUpdated $event) {
 
         $this->logEvent($event);
-
+        $this->changeMeetingStatus($event->getObject()->id, 'created');
         $this->logFinishEvent();
     }
 
@@ -52,7 +66,7 @@ namespace RoiUp\Zoom\Listeners;
     public function onMeetingStarted(MeetingStarted $event) {
 
         $this->logEvent($event);
-
+        $this->changeMeetingStatus($event->getObject()->id, 'started');
         $this->logFinishEvent();
     }
 
@@ -62,11 +76,13 @@ namespace RoiUp\Zoom\Listeners;
     public function onMeetingEnded(MeetingEnded $event) {
 
         $this->logEvent($event);
-
+        $this->changeMeetingStatus($event->getObject()->id, 'ended');
         $this->logFinishEvent();
     }
 
-
+    private function changeMeetingStatus($meetingId, $status){
+        Meeting::whereZoomId($meetingId)->update(['status' => $status]);
+    }
 
     /**
      * Register the listeners for the subscriber.

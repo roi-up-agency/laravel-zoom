@@ -10,10 +10,11 @@ class Request
 {
     protected $client;
     protected $headers;
-    protected $endPoint = 'https://api.zoom.us/v2/';
+    protected $endPoint;
 
     public function __construct()
     {
+        $this->endPoint = config('zoom.base_url');
         $this->client = new Client();
         $this->headers = [
             'Authorization' => 'Bearer ' . $this->generateJWT(),
@@ -66,7 +67,6 @@ class Request
                 'body' => $body, 
                 'headers' => $this->headers
             ]);
-            dd($response);
             return $this->result($response);
         } catch (ClientException $e) {
             return (array)json_decode($e->getResponse()->getBody()->getContents());
@@ -85,6 +85,29 @@ class Request
         $body = json_encode($fields);
         try {
             $response = $this->client->request('PATCH', $this->endPoint . $method, [
+                'body' => $body,
+                'headers' => $this->headers
+            ]);
+
+            return $this->result($response);
+        } catch (ClientException $e) {
+            return (array)json_decode($e->getResponse()->getBody()->getContents());
+        }
+    }
+
+    /**
+     * Patch
+     *
+     * @param $method
+     * @param $fields
+     * @return array|mixed
+     */
+    protected function put($method, $fields)
+    {
+        $body = json_encode($fields);
+        try {
+
+            $response = $this->client->request('PUT', $this->endPoint . $method, [
                 'body' => $body,
                 'headers' => $this->headers
             ]);

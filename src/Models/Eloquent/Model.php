@@ -1,6 +1,6 @@
 <?php
 
-namespace Roiup\Zoom\Models\Eloquent;
+namespace RoiUp\Zoom\Models\Eloquent;
 
 use Illuminate\Database\Eloquent\Model as Eloquent;
 

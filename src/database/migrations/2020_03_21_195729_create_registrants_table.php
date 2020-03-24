@@ -16,6 +16,7 @@ class CreateRegistrantsTable extends Migration
         Schema::create('zoom_registrants', function (Blueprint $table) {
             $table->increments('id');
             $table->string('meeting_id')->index();
+            $table->string('occurrence_id')->index();
             $table->string('registrant_id')->index();
             $table->string('email');
             $table->string('first_name');

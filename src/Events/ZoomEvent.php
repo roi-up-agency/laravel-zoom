@@ -17,8 +17,8 @@ class ZoomEvent
 
         $this->event        = $event->event;
         $this->accountId    = $payload->account_id;
-        $this->operator     = $payload->operator;
-        $this->operatorId   = $payload->operator_id;
+        $this->operator     = !empty($payload->operator) ? $payload->operator : null;
+        $this->operatorId   = !empty($payload->operator_id) ? $payload->operator_id : null;
         $this->object       = $payload->object;
 
     }

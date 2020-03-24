@@ -2,7 +2,11 @@
 namespace RoiUp\Zoom\Http\Api\Requests;
 
 use RoiUp\Zoom\Http\Api\Request;
+use RoiUp\Zoom\Models\Eloquent\Occurrence;
 use RoiUp\Zoom\Models\Zoom\Meeting as Model;
+use RoiUp\Zoom\Models\Eloquent\Meeting as EloquentModel;
+use RoiUp\Zoom\Models\Zoom\Registrant;
+use RoiUp\Zoom\Models\Eloquent\Registrant as RegistrantModel;
 
 class Meeting extends Request
 {
@@ -32,7 +36,35 @@ class Meeting extends Request
      */
     public function create($userId, Model $meeting)
     {
-        return $this->post("users/{$userId}/meetings", $meeting);
+        $meetingModel = new EloquentModel();
+        $meetingModel->fillFromZoomModel($meeting, $userId);
+        $meetingModel->status = 'creating';
+        $meetingModel->save();
+
+        $response =  $this->post("users/{$userId}/meetings", $meeting);
+
+        if(isset($response['code']) && $response['code'] === 201){
+            $meetingModel->uuid = $response['uuid'];
+            $meetingModel->zoom_id = $response['id'];
+            $meetingModel->join_url = $response['join_url'];
+            $meetingModel->registration_url = !empty($response['registration_url']) ?  $response['registration_url'] : null;
+
+            if(isset($response['occurrences'])){
+                foreach ($response['occurrences'] as $occurrence){
+                    $occurrenceModel = new Occurrence();
+                    $occurrenceModel->meeting_id = $meetingModel->zoom_id;
+                    $occurrenceModel->fill($occurrence);
+                    $occurrenceModel->save();
+                }
+            }
+
+            $meetingModel->save();
+
+        }else{
+            $meetingModel->delete();
+        }
+
+        return $response;
     }
 
     /**
@@ -55,7 +87,58 @@ class Meeting extends Request
      */
     public function update($meetingId, Model $meeting)
     {
-        return $this->patch("meetings/{$meetingId}", $meeting);
+        $actualMeeting = EloquentModel::whereZoomId($meetingId)->first();
+
+        $removeOccurrences = false;
+
+        if($actualMeeting->recurrence !== json_encode($meeting->recurrence)){
+            $removeOccurrences = true;
+            foreach($actualMeeting->occurrences as $occurrence){
+                if(sizeof($occurrence->approved) > 0){
+                    return "There is some registrants approved for one ore more occurrences of this meeting";
+                }
+            }
+        }
+
+        $response = $this->patch("meetings/{$meetingId}", $meeting);
+
+        //CALL RETRIEVE
+        if(isset($response['code']) && $response['code'] === 204){
+            $meeting = $this->retrieve($meetingId);
+
+            $actualMeeting->fillFromZoomModel($meeting, $actualMeeting->host_id);
+
+            if($removeOccurrences){
+
+                Occurrence::whereMeetingId($actualMeeting->zoom_id)->delete();
+                RegistrantModel::whereMeetingId($actualMeeting->zoom_id)->delete();
+
+                if(sizeof($meeting->occurrences) > 0){
+
+                    foreach ($meeting->occurrences as $occurrence){
+                        $occurrenceModel = new Occurrence();
+                        $occurrenceModel->meeting_id = $actualMeeting->zoom_id;
+                        $occurrenceModel->fill($occurrence);
+                        $occurrenceModel->save();
+                    }
+                }
+            }
+
+            if($actualMeeting->duration == ''){
+                $actualMeeting->duration = $actualMeeting->occurrences[0]['duration'];
+            }
+
+            if($actualMeeting->start_time == ''){
+                $actualMeeting->start_time = $actualMeeting->occurrences[0]['start_time'];
+            }
+
+            unset($actualMeeting->occurrences);
+
+            $actualMeeting->save();
+
+        }
+
+        return $response;
     }
 
     /**
@@ -89,7 +172,7 @@ class Meeting extends Request
         $response = $this->get("meetings/{$meetingId}/registrants");
         $registrants = [];
         foreach($response['registrants'] as $registrant){
-            $registrants[] = Registrant::instantiate($reggistrant);
+            $registrants[] = Registrant::instantiate($registrant);
         }
         return $registrants;
     }
@@ -121,13 +204,19 @@ class Meeting extends Request
      * @param string $action
      * @return array|mixed
      */
-    public function updateRegistrantStatus($meetingId, $registrants, $action)
+    public function updateRegistrantStatus($meetingId, $registrants, $action, $occurrenceId = null)
     {
         $reges = [];
         foreach($registrants as $registrant){
             $reges[] = ['id' => $registrant->id, 'email' => $registrant->email];
         }
-        return $this->patch("meetings/{$meetingId}/registrants/status", ['action' => $action, 'registrants' => $reges]);
+
+        $queryString = '';
+        if($occurrenceId !== null){
+            $queryString .= '?occurrence_id=' . $occurrenceId;
+        }
+
+        return $this->put("meetings/{$meetingId}/registrants/status" . $queryString , ['action' => $action, 'registrants' => $reges]);
     }
 
     // /**
