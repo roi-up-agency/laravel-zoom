@@ -27,18 +27,18 @@ namespace RoiUp\Zoom\Listeners;
         $host       = $meeting->host;
 
         $data = [
-            'logoUrl'       => config('zoom.email_logo'),
             'firstName'     => $registrant->first_name,
             'lastName'      => $registrant->last_name,
             'topic'         => $meeting->topic,
             'ownerEmail'    => $host->email,
-            'date'          => $occurrence->start_time,
+            'date'          => $this->getFormattedDate($occurrence->start_time) . ' ' . $meeting->timezone,
             'calendarLinks' => RegistrantLinks::getCalendarLinks($meeting, $registrant->registrant_id),
             'joinUrl'       => $registrant->join_url,
             'password'      => !empty($meeting->password) ? $meeting->password : '',
             'cancelRegistrationLink'      => RegistrantLinks::generateActionLink('cancel', $registrant),
-            'footerContent' => 'test footer'
         ];
+
+        $data = array_merge($this->initEmailData(), $data);
 
         Mail::to($registrant->email, $registrant->first_name . ' ' . $registrant->last_name)->send(new RegistrantConfirm($data));
     }
@@ -50,15 +50,17 @@ namespace RoiUp\Zoom\Listeners;
          $occurrence = $registrant->occurrence;
          $host       = $meeting->host;
 
-         $text = trans('zoom::emails.registration_new_text', ['topic' => $meeting->topic, 'date' => $occurrence->start_time, 'registrant_email' => $registrant->email, 'registrant_name' => $registrant->fullName()]);
+         $text = trans('zoom::emails.registration_new_text', ['topic' => $meeting->topic, 'date' => $this->getFormattedDate($occurrence->start_time) . ' ' . $meeting->timezone, 'registrant_email' => $registrant->email, 'registrant_name' => $registrant->fullName()]);
+
          $data = [
-             'logoUrl'      => config('zoom.email_logo'),
              'name'         => $host->first_name . ' ' . $host->last_name,
              'text'         => $text,
              'approveLink'  => RegistrantLinks::generateActionLink('approve', $registrant),
              'denyLink'     => RegistrantLinks::generateActionLink('deny', $registrant),
          ];
-            
+
+         $data = array_merge($this->initEmailData(), $data);
+
          $mail = new SimpleEmail($data);
          $mail->subject = trans('zoom::emails.registration_new_subject', ['topic' => $meeting->topic]);
          Mail::to($host->email, $host->first_name . ' ' . $host->last_name)->send($mail);
@@ -71,12 +73,13 @@ namespace RoiUp\Zoom\Listeners;
          $occurrence = $registrant->occurrence;
 
 
-         $text = trans('zoom::emails.registration_approved_text', ['topic' => $meeting->topic, 'date' => $occurrence->start_time]);
+         $text = trans('zoom::emails.registration_approved_text', ['topic' => $meeting->topic, 'date' => $this->getFormattedDate($occurrence->start_time) . ' ' . $meeting->timezone]);
+
          $data = [
-             'logoUrl'  => config('zoom.email_logo'),
              'name'     => $registrant->first_name . ' ' . $registrant->last_name,
              'text'     => $text,
          ];
+         $data = array_merge($this->initEmailData(), $data);
 
          $mail = new SimpleEmail($data);
          $mail->subject = trans('zoom::emails.registration_approved_subject', ['topic' => $meeting->topic]);
@@ -90,12 +93,13 @@ namespace RoiUp\Zoom\Listeners;
          $occurrence = $registrant->occurrence;
 
 
-         $text = trans('zoom::emails.registration_cancelled_text', ['topic' => $meeting->topic, 'date' => $occurrence->start_time]);
+         $text = trans('zoom::emails.registration_cancelled_text', ['topic' => $meeting->topic, 'date' => $this->getFormattedDate($occurrence->start_time) . ' ' . $meeting->timezone]);
+
          $data = [
-             'logoUrl'  => config('zoom.email_logo'),
              'name'     => $registrant->first_name . ' ' . $registrant->last_name,
              'text'     => $text,
          ];
+         $data = array_merge($this->initEmailData(), $data);
 
          $mail = new SimpleEmail($data);
          $mail->subject = trans('zoom::emails.registration_cancelled_subject', ['topic' => $meeting->topic]);
@@ -109,12 +113,13 @@ namespace RoiUp\Zoom\Listeners;
          $occurrence = $registrant->occurrence;
 
 
-         $text = trans('zoom::emails.registration_denied_text', ['topic' => $meeting->topic, 'date' => $occurrence->start_time]);
+         $text = trans('zoom::emails.registration_denied_text', ['topic' => $meeting->topic, 'date' => $this->getFormattedDate($occurrence->start_time) . ' ' . $meeting->timezone]);
+
          $data = [
-             'logoUrl'  => config('zoom.email_logo'),
              'name'     => $registrant->first_name . ' ' . $registrant->last_name,
              'text'     => $text,
          ];
+         $data = array_merge($this->initEmailData(), $data);
 
          $mail = new SimpleEmail($data);
          $mail->subject = trans('zoom::emails.registration_denied_subject', ['topic' => $meeting->topic]);
@@ -128,12 +133,13 @@ namespace RoiUp\Zoom\Listeners;
          $occurrence = $registrant->occurrence;
 
 
-         $text = trans('zoom::emails.registration_deleted_text', ['topic' => $meeting->topic, 'date' => $occurrence->start_time]);
+         $text = trans('zoom::emails.registration_deleted_text', ['topic' => $meeting->topic, 'date' => $this->getFormattedDate($occurrence->start_time) . ' ' . $meeting->timezone]);
+
          $data = [
-             'logoUrl'  => config('zoom.email_logo'),
              'name'     => $registrant->first_name . ' ' . $registrant->last_name,
              'text'     => $text,
          ];
+         $data = array_merge($this->initEmailData(), $data);
 
          $mail = new SimpleEmail($data);
          $mail->subject = trans('zoom::emails.registration_deleted_subject', ['topic' => $meeting->topic]);
@@ -179,4 +185,17 @@ namespace RoiUp\Zoom\Listeners;
 
     }
 
+    private function getFormattedDate($zoomTime){
+
+        $format = config('zoom.emails_date_format');
+
+        return date($format, strtotime($zoomTime));
+    }
+
+    private function initEmailData(){
+        return [
+            'logoUrl'       => config('zoom.emails_logo_url'),
+            'footerContent' => trans('zoom::emails.footer_html_content')
+        ];
+    }
 }

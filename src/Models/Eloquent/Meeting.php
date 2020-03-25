@@ -28,12 +28,13 @@ class Meeting extends Model
 
     public function fillFromZoomModel(ZoomMeeting $meeting, $hostId){
 
-        $this->host_id = $hostId;
-        if(sizeof($meeting) == 1){
-            $meeting = $meeting->returned();
-        }
+        $meeting = $meeting->returned();
 
         foreach($meeting as $key => $value){
+
+            if(!in_array($key, $this->fillable)){
+                continue;
+            }
 
             switch ($key){
                 case 'settings':
@@ -48,5 +49,32 @@ class Meeting extends Model
 
         }
 
+        $this->host_id = $hostId;
+
+    }
+
+    public function mergeSettings($settings){
+        $actualSettingsArray = json_decode($this->settings);
+        foreach ($settings as $key => $value){
+            if(isset($actualSettingsArray->$key)){
+                $actualSettingsArray->$key = $value;
+            }
+        }
+        $this->settings = json_encode($actualSettingsArray);
+    }
+
+    public function updateOccurrences($occurrences){
+        Occurrence::whereMeetingId($this->zoom_id)->delete();
+        Registrant::whereMeetingId($this->zoom_id)->delete();
+
+        if(sizeof($occurrences) > 0){
+
+            foreach ($occurrences as $occurrence){
+                $occurrenceModel = new Occurrence();
+                $occurrenceModel->meeting_id = $this->zoom_id;
+                $occurrenceModel->fill($occurrence);
+                $occurrenceModel->save();
+            }
+        }
     }
 }

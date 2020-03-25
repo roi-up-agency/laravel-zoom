@@ -58,13 +58,9 @@
                 @if(!empty($footerContent))
                     <tr>
                         <td align="center" class="unSubContent" id="bodyCellFooter" valign="top">
-                            <table border="0" cellpadding="0" cellspacing="0" id="templateContainerFooter" width="100%">
-                                <tr>
-                                    <td valign="top" width="100%" mc:edit="welcomeEdit-11">
-                                        {!! $footerContent !!}
-                                    </td>
-                                </tr>
-                            </table>
+
+                            @include('zoom::emails.footer', ['footerContent' => $footerContent])
+
                         </td>
                     </tr>
                 @endif

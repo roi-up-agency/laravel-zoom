@@ -17,6 +17,8 @@ return [
     'registration_deleted_text' => '<p>The webinar :topic at :date where you was registered has been cancelled by the organizer.</p>
                                       <p>Please, check our site for new webinars.</p>',
 
+    'footer_html_content'   => ''
+
 
 
 ];

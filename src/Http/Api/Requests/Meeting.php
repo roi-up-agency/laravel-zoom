@@ -36,9 +36,11 @@ class Meeting extends Request
      */
     public function create($userId, Model $meeting)
     {
+
         $meetingModel = new EloquentModel();
         $meetingModel->fillFromZoomModel($meeting, $userId);
         $meetingModel->status = 'creating';
+
         $meetingModel->save();
 
         $response =  $this->post("users/{$userId}/meetings", $meeting);
@@ -100,45 +102,8 @@ class Meeting extends Request
             }
         }
 
-        $response = $this->patch("meetings/{$meetingId}", $meeting);
+        return $this->patch("meetings/{$meetingId}", $meeting);
 
-        //CALL RETRIEVE
-        if(isset($response['code']) && $response['code'] === 204){
-            $meeting = $this->retrieve($meetingId);
-
-            $actualMeeting->fillFromZoomModel($meeting, $actualMeeting->host_id);
-
-            if($removeOccurrences){
-
-                Occurrence::whereMeetingId($actualMeeting->zoom_id)->delete();
-                RegistrantModel::whereMeetingId($actualMeeting->zoom_id)->delete();
-
-                if(sizeof($meeting->occurrences) > 0){
-
-                    foreach ($meeting->occurrences as $occurrence){
-                        $occurrenceModel = new Occurrence();
-                        $occurrenceModel->meeting_id = $actualMeeting->zoom_id;
-                        $occurrenceModel->fill($occurrence);
-                        $occurrenceModel->save();
-                    }
-                }
-            }
-
-            if($actualMeeting->duration == ''){
-                $actualMeeting->duration = $actualMeeting->occurrences[0]['duration'];
-            }
-
-            if($actualMeeting->start_time == ''){
-                $actualMeeting->start_time = $actualMeeting->occurrences[0]['start_time'];
-            }
-
-            unset($actualMeeting->occurrences);
-
-            $actualMeeting->save();
-
-        }
-
-        return $response;
     }
 
     /**

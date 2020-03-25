@@ -7,7 +7,11 @@ namespace RoiUp\Zoom\Listeners;
  use RoiUp\Zoom\Events\Meeting\MeetingUpdated;
  use RoiUp\Zoom\Events\Meeting\MeetingStarted;
  use RoiUp\Zoom\Events\Meeting\MeetingEnded;
+ use RoiUp\Zoom\Events\Notifications\SendDeleteOccurrence;
  use RoiUp\Zoom\Models\Eloquent\Meeting;
+ use RoiUp\Zoom\Models\Eloquent\Meeting as EloquentModel;
+ use RoiUp\Zoom\Models\Eloquent\Occurrence;
+ use RoiUp\Zoom\Models\Eloquent\Registrant as RegistrantModel;
 
  class MeetingEventSubscriber extends AbstractEventSubscriber
 {
@@ -21,7 +25,7 @@ namespace RoiUp\Zoom\Listeners;
 
         $this->logEvent($event);
 
-        $model = Meeting::whereZoomId($event->getObject()->id)->first();
+        $model = Meeting::whereZoomId($event->getObject()['id'])->first();
         $model->status = 'created';
         $model->save();
 
@@ -34,19 +38,33 @@ namespace RoiUp\Zoom\Listeners;
     public function onMeetingDeleted(MeetingDeleted $event) {
 
         $this->logEvent($event);
-        $meeting = new \RoiUp\Zoom\Models\Zoom\Meeting();
-        $meeting->create((array)$event->getObject());
 
-        $model = Meeting::whereZoomId($event->getObject()->id)->first();
-        $model->occurrences->each(function($item){
+        $meeting = Meeting::whereZoomId($event->getObject()['id'])->first();
+
+        $occurrences = isset($event->getObject()['occurrences']) ? $event->getObject()['occurrences'] : $meeting->occurrences;
+
+        foreach($occurrences as $occurrence){
+
+            $item = Occurrence::whereOccurrenceId($occurrence['occurrence_id'])->whereMeetingId($meeting->zoom_id)->first();
+
+            if($item == null){
+                continue;
+            }
+
             $item->registrants->each(function($registrant){
-                //TODO Send notification
+                if($registrant->status !== 'denied'){
+                    event(new SendDeleteOccurrence($registrant));
+                }
                 $registrant->delete();
             });
-            $item->delete();
-        });
 
-        $model->delete();
+            $item->delete();
+        }
+
+        if(Occurrence::whereMeetingId($meeting->zoom_id)->count() == 0){
+            $meeting->delete();
+        }
+
         $this->logFinishEvent();
     }
 
@@ -56,7 +74,37 @@ namespace RoiUp\Zoom\Listeners;
     public function onMeetingUpdated(MeetingUpdated $event) {
 
         $this->logEvent($event);
-        $this->changeMeetingStatus($event->getObject()->id, 'created');
+
+        $meeting = EloquentModel::whereZoomId($event->getObject()['id'])->first();
+
+        $changes = $event->getObject();
+
+        unset($changes['id']);
+        foreach($changes as $field => $value){
+
+            switch ($field){
+                case 'recurrence':
+                    $meeting->$field = json_encode($value);
+                    break;
+                case 'settings':
+                    $meeting->mergeSettings($value);
+                    break;
+                case 'occurrences':
+                    $meeting->updateOccurrences($value);
+                    break;
+                default:
+                    if(in_array($field, $meeting->getFillable())){
+                        $meeting->$field = $value;
+                    }
+                    break;
+            }
+        }
+
+        $meeting->duration = $meeting->occurrences[0]['duration'];
+        $meeting->start_time = $meeting->occurrences[0]['start_time'];
+
+        $meeting->save();
+
         $this->logFinishEvent();
     }
 
@@ -66,7 +114,7 @@ namespace RoiUp\Zoom\Listeners;
     public function onMeetingStarted(MeetingStarted $event) {
 
         $this->logEvent($event);
-        $this->changeMeetingStatus($event->getObject()->id, 'started');
+        $this->changeMeetingStatus($event->getObject()['id'], 'started');
         $this->logFinishEvent();
     }
 
@@ -76,7 +124,7 @@ namespace RoiUp\Zoom\Listeners;
     public function onMeetingEnded(MeetingEnded $event) {
 
         $this->logEvent($event);
-        $this->changeMeetingStatus($event->getObject()->id, 'ended');
+        $this->changeMeetingStatus($event->getObject()['id'], 'ended');
         $this->logFinishEvent();
     }
 

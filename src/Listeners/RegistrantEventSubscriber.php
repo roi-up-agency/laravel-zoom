@@ -14,6 +14,7 @@ namespace RoiUp\Zoom\Listeners;
  use RoiUp\Zoom\Events\Notifications\SendApproveRegistrant;
  use RoiUp\Zoom\Events\Notifications\SendCancelRegistrant;
  use RoiUp\Zoom\Events\Notifications\SendDeniedRegistrant;
+ use RoiUp\Zoom\Events\Notifications\SendNewRegistrant;
  use RoiUp\Zoom\Events\Notifications\SendRegistrantConfirm;
  use RoiUp\Zoom\Models\Zoom\Registrant;
  use RoiUp\Zoom\Models\Eloquent\Registrant as RegistrantModel;
@@ -42,6 +43,8 @@ namespace RoiUp\Zoom\Listeners;
         $registrantModel->save();
         
         event(new SendRegistrantConfirm($registrantModel));
+
+        event(new SendNewRegistrant($registrantModel));
 
         $this->logFinishEvent();
     }
@@ -90,7 +93,7 @@ namespace RoiUp\Zoom\Listeners;
         $registrant->save();
 
         event(new SendDeniedRegistrant($registrant));
-        
+
         $this->logFinishEvent();
     }
 
