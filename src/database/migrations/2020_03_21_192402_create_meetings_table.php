@@ -19,7 +19,9 @@ class CreateMeetingsTable extends Migration
             $table->string('zoom_id')->index()->nullable();
             $table->string('host_id')->index();
             $table->string('topic')->index();
+            $table->text('start_url')->nullable();
             $table->string('join_url')->nullable();
+            $table->string('registration_url')->nullable();
             $table->integer('type');
             $table->string('start_time');
             $table->integer('duration');
@@ -28,6 +30,7 @@ class CreateMeetingsTable extends Migration
             $table->string('password')->nullable();
             $table->text('recurrence')->nullable();
             $table->text('settings');
+            $table->enum('status', ['creating', 'created', 'started', 'ended']);
             $table->timestamps();
         });
     }

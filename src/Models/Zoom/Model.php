@@ -42,4 +42,10 @@ abstract class Model
     	return $this->attributes;
     }
 
+    public function toObject(){
+	    foreach($this->attributes as $key => $attribute){
+	        $this->$key = $attribute;
+        }
+	    return $this;
+    }
 }
