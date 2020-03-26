@@ -6,10 +6,10 @@ use RoiUp\Zoom\Models\Eloquent\Registrant;
 
 class RegistrantLinks{
 
-    public const CALENDAR_TYPE_GOOGLE       = 'google';
-    public const CALENDAR_TYPE_ICALENDAR    = 'icalendar';
-    public const CALENDAR_TYPE_DOWNLOAD     = 'download';
-    public const CALENDAR_TYPE_YAHOO        = 'yahoo';
+    const CALENDAR_TYPE_GOOGLE       = 'google';
+    const CALENDAR_TYPE_ICALENDAR    = 'icalendar';
+    const CALENDAR_TYPE_DOWNLOAD     = 'download';
+    const CALENDAR_TYPE_YAHOO        = 'yahoo';
 
     public static function generateActionLink($action, Registrant $registrant){
 

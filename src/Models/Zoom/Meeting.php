@@ -4,41 +4,41 @@ namespace RoiUp\Zoom\Models\Zoom;
 class Meeting extends Model
 {
 
-    public const TYPE_INSTANT                   = 1;
-    public const TYPE_SCHEDULED                 = 2;
-    public const TYPE_RECURRENT_NO_FIXED_TIME   = 3;
-    public const TYPE_RECURRENT_FIXED_TIME      = 8;
+    const TYPE_INSTANT                   = 1;
+    const TYPE_SCHEDULED                 = 2;
+    const TYPE_RECURRENT_NO_FIXED_TIME   = 3;
+    const TYPE_RECURRENT_FIXED_TIME      = 8;
 
 
-    public const SETTINGS_KEY_HOST_VIDEO        = 'host_video';
-    public const SETTINGS_KEY_PARTICIPANT_VIDEO = 'participant_video';
-    public const SETTINGS_KEY_JOIN_BEFORE_HOST  = 'join_before_host';
-    public const SETTINGS_KEY_MUTE_UPON_ENTRY   = 'mute_upon_entry';
-    public const SETTINGS_KEY_WATERMARK         = 'watermark';
-    public const SETTINGS_KEY_USE_PMI           = 'use_pmi';
-    public const SETTINGS_KEY_APPROVAL_TYPE     = 'approval_type';
-    public const SETTINGS_KEY_REGISTRATION_TYPE = 'registration_type';
-    public const SETTINGS_KEY_AUDIO             = 'audio';
-    public const SETTINGS_KEY_AUTO_RECORDING    = 'auto_recording';
-    public const SETTINGS_KEY_REGISTRANTS_EMAIL = 'registrants_email_notifications';
+    const SETTINGS_KEY_HOST_VIDEO        = 'host_video';
+    const SETTINGS_KEY_PARTICIPANT_VIDEO = 'participant_video';
+    const SETTINGS_KEY_JOIN_BEFORE_HOST  = 'join_before_host';
+    const SETTINGS_KEY_MUTE_UPON_ENTRY   = 'mute_upon_entry';
+    const SETTINGS_KEY_WATERMARK         = 'watermark';
+    const SETTINGS_KEY_USE_PMI           = 'use_pmi';
+    const SETTINGS_KEY_APPROVAL_TYPE     = 'approval_type';
+    const SETTINGS_KEY_REGISTRATION_TYPE = 'registration_type';
+    const SETTINGS_KEY_AUDIO             = 'audio';
+    const SETTINGS_KEY_AUTO_RECORDING    = 'auto_recording';
+    const SETTINGS_KEY_REGISTRANTS_EMAIL = 'registrants_email_notifications';
 
-    public const SETTINGS_APPROVAL_TYPE_AUTO                = 0;
-    public const SETTINGS_APPROVAL_TYPE_MANUAL              = 1;
-    public const SETTINGS_APPROVAL_TYPE_NO_REGISTRATION_REQ = 2;
+    const SETTINGS_APPROVAL_TYPE_AUTO                = 0;
+    const SETTINGS_APPROVAL_TYPE_MANUAL              = 1;
+    const SETTINGS_APPROVAL_TYPE_NO_REGISTRATION_REQ = 2;
 
-    public const SETTINGS_REGISTRATION_TYPE_ONCE_ALL_OCCURRENCES    = 1;
-    public const SETTINGS_REGISTRATION_TYPE_ONCE_ONE_OCCURRENCES    = 2;
-    public const SETTINGS_REGISTRATION_TYPE_ONCE_MANY_OCCURRENCES   = 3;
+    const SETTINGS_REGISTRATION_TYPE_ONCE_ALL_OCCURRENCES    = 1;
+    const SETTINGS_REGISTRATION_TYPE_ONCE_ONE_OCCURRENCES    = 2;
+    const SETTINGS_REGISTRATION_TYPE_ONCE_MANY_OCCURRENCES   = 3;
 
-    public const SETTINGS_AUDIO_BOTH        = 'both';
-    public const SETTINGS_AUDIO_TELEPHONY   = 'telephony';
-    public const SETTINGS_AUDIO_VOIP        = 'voip';
+    const SETTINGS_AUDIO_BOTH        = 'both';
+    const SETTINGS_AUDIO_TELEPHONY   = 'telephony';
+    const SETTINGS_AUDIO_VOIP        = 'voip';
 
-    public const SETTINGS_AUTO_RECORDING_LOCAL  = 'local';
-    public const SETTINGS_AUTO_RECORDING_CLOUD  = 'cloud';
-    public const SETTINGS_AUTO_RECORDING_NONE   = 'none';
+    const SETTINGS_AUTO_RECORDING_LOCAL  = 'local';
+    const SETTINGS_AUTO_RECORDING_CLOUD  = 'cloud';
+    const SETTINGS_AUTO_RECORDING_NONE   = 'none';
 
-    public const SETTINGS_REGISTRANTS_EMAIL     = '';
+    const SETTINGS_REGISTRANTS_EMAIL     = '';
 
 
 	protected $attributes = [
