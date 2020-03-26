@@ -50,6 +50,7 @@ class Meeting extends Request
             $meetingModel->zoom_id = $response['id'];
             $meetingModel->join_url = $response['join_url'];
             $meetingModel->registration_url = !empty($response['registration_url']) ?  $response['registration_url'] : null;
+            $meetingModel->start_url = !empty($response['start_url']) ?  $response['start_url'] : null;
 
             if(isset($response['occurrences'])){
                 foreach ($response['occurrences'] as $occurrence){
