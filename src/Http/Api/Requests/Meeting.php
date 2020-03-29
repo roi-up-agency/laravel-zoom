@@ -17,7 +17,7 @@ class Meeting extends Request
      * @param string $userId
      * @return array|mixed
      */
-    public function list($userId)
+    public function getList($userId)
     {
         $response = $this->get("users/{$userId}/meetings");
         $meetings = [];

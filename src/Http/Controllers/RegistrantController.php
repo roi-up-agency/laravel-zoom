@@ -91,7 +91,6 @@ class RegistrantController extends Controller
                     $response = $zoom->meeting->updateRegistrantStatus($data->meeting_id, $registrants, $action, $data->occurrence_id);
                 }else{
                     $response = $zoom->meeting->updateRegistrantStatus($data->meeting_id, $registrants, $action);
-                    dd($response);
                 }
 
                 return (isset($response['code']) && $response['code'] == 204) ? 204 : 500;

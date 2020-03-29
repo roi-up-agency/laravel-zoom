@@ -21,53 +21,53 @@ namespace RoiUp\Zoom\Listeners;
     /**
      * Handle registrant created events.
      */
-    public function onSendRegistrantConfirm(SendRegistrantConfirm $event) {
+     public function onSendRegistrantConfirm(SendRegistrantConfirm $event) {
 
-        $registrant = $event->registrant;
-        $meeting    = $registrant->meeting;
-        $host       = $meeting->host;
-        
-        $arrDate = [];
-        foreach($registrant->occurrences as $occurrence){
-            if(is_array($occurrence)){
-                $occurrence = (object)$occurrence;
-            }
-            $date = $this->getFormattedDate($occurrence->start_time);
+         $registrant = $event->registrant;
+         $meeting    = $registrant->meeting;
+         $host       = $meeting->host;
 
-            switch ($meeting->getSetting(ZoomMeeting::SETTINGS_KEY_REGISTRATION_TYPE)) {
-                case ZoomMeeting::SETTINGS_REGISTRATION_TYPE_ONCE_ALL_OCCURRENCES:
-                case ZoomMeeting::SETTINGS_REGISTRATION_TYPE_ONCE_ONE_OCCURRENCES:
-                    $arrDate[] = $date;
-                    break;
-                case ZoomMeeting::SETTINGS_REGISTRATION_TYPE_ONCE_MANY_OCCURRENCES:
-                    $registrant->occurrence_id = $occurrence->occurrence_id;
-                    $link = RegistrantLinks::generateActionLink('cancel', $registrant);
-                    $link = '<a href="'. $link. '" target="_blank">Cancelar suscripción para esta recurrencia</a>';
-                    $arrDate[] = $this->getFormattedDate($occurrence->start_time) . ' - ' . $link;
-                    break;
-            }
+         $arrDate = [];
+         foreach($registrant->occurrences as $occurrence){
+             if(is_array($occurrence)){
+                 $occurrence = (object)$occurrence;
+             }
+             $date = $this->getFormattedDate($occurrence->start_time);
 
-        }
+             switch ($meeting->getSetting(ZoomMeeting::SETTINGS_KEY_REGISTRATION_TYPE)) {
+                 case ZoomMeeting::SETTINGS_REGISTRATION_TYPE_ONCE_ALL_OCCURRENCES:
+                 case ZoomMeeting::SETTINGS_REGISTRATION_TYPE_ONCE_ONE_OCCURRENCES:
+                     $arrDate[] = $date;
+                     break;
+                 case ZoomMeeting::SETTINGS_REGISTRATION_TYPE_ONCE_MANY_OCCURRENCES:
+                     $registrant->occurrence_id = $occurrence->occurrence_id;
+                     $link = RegistrantLinks::generateActionLink('cancel', $registrant);
+                     $link = '<a href="'. $link. '" target="_blank">Cancelar suscripción para esta recurrencia</a>';
+                     $arrDate[] = $this->getFormattedDate($occurrence->start_time) . ' - ' . $link;
+                     break;
+             }
 
-        $data = [
-            'firstName'     => $registrant->first_name,
-            'lastName'      => $registrant->last_name,
-            'topic'         => $meeting->topic,
-            'ownerEmail'    => $host->email,
-            'date'          => $arrDate,
-            'timezone'      => $meeting->timezone,
-            'calendarLinks' => RegistrantLinks::getCalendarLinks($meeting, $registrant->registrant_id),
-            'joinUrl'       => $registrant->join_url,
-            'password'      => !empty($meeting->password) ? $meeting->password : '',
-        ];
-        if($meeting->getSetting(ZoomMeeting::SETTINGS_KEY_REGISTRATION_TYPE) !== ZoomMeeting::SETTINGS_REGISTRATION_TYPE_ONCE_MANY_OCCURRENCES){
-            $data['cancelRegistrationLink']   = RegistrantLinks::generateActionLink('cancel', $registrant, false);
-        }
+         }
 
-        $data = array_merge($this->initEmailData(), $data);
+         $data = [
+             'firstName'     => $registrant->first_name,
+             'lastName'      => $registrant->last_name,
+             'topic'         => $meeting->topic,
+             'ownerEmail'    => $host->email,
+             'date'          => $arrDate,
+             'timezone'      => $meeting->timezone,
+             'calendarLinks' => RegistrantLinks::getCalendarLinks($meeting, $registrant->registrant_id),
+             'joinUrl'       => $registrant->join_url,
+             'password'      => !empty($meeting->password) ? $meeting->password : '',
+         ];
+         if($meeting->getSetting(ZoomMeeting::SETTINGS_KEY_REGISTRATION_TYPE) !== ZoomMeeting::SETTINGS_REGISTRATION_TYPE_ONCE_MANY_OCCURRENCES){
+             $data['cancelRegistrationLink']   = RegistrantLinks::generateActionLink('cancel', $registrant, $meeting->getSetting(ZoomMeeting::SETTINGS_KEY_REGISTRATION_TYPE) === ZoomMeeting::SETTINGS_REGISTRATION_TYPE_ONCE_ONE_OCCURRENCES ? true : false);
+         }
 
-        Mail::to($registrant->email, $registrant->first_name . ' ' . $registrant->last_name)->send(new RegistrantConfirm($data));
-    }
+         $data = array_merge($this->initEmailData(), $data);
+
+         Mail::to($registrant->email, $registrant->first_name . ' ' . $registrant->last_name)->send(new RegistrantConfirm($data));
+     }
 
      public function onSendNewRegistrant(SendNewRegistrant $event) {
 
