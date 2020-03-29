@@ -44,4 +44,8 @@ class Registrant extends Model
     public function fullName(){
         return $this->first_name . ' ' . $this->last_name;
     }
+    
+    public function isSubscribed(){
+        return Registrant::whereMeetingId($this->meeting_id)->whereRegistrantId($this->registrant_id)->whereOccurrenceId($this->occurrence_id)->count() > 0;
+    }
 }

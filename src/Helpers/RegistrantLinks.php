@@ -11,22 +11,25 @@ class RegistrantLinks{
     const CALENDAR_TYPE_DOWNLOAD     = 'download';
     const CALENDAR_TYPE_YAHOO        = 'yahoo';
 
-    public static function generateActionLink($action, Registrant $registrant){
+    public static function generateActionLink($action, Registrant $registrant, $includeOccurrence = true){
 
 
-        return route('registrant_' . $action) . '?key='. self::generateKey($registrant);
+        return route('registrant_' . $action) . '?key='. self::generateKey($registrant, $includeOccurrence);
 
     }
 
-    public static function generateKey(Registrant $registrant){
+    public static function generateKey(Registrant $registrant, $includeOccurrence = true){
 
         $data = [
             'meeting_id'        => $registrant->meeting_id,
-            'occurrence_id'     => $registrant->occurrence_id,
             'registrant_id'     => $registrant->registrant_id,
             'registrant_email'  => $registrant->email,
             'authorization'     => config('zoom.events_token')
         ];
+
+        if($includeOccurrence){
+            $data['occurrence_id'] = $registrant->occurrence_id;
+        }
 
         return encrypt(json_encode($data));
     }

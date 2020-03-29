@@ -18,11 +18,19 @@ class RegistrantActions
          */
         public function handle($request, Closure $next, $guard = null)
         {
-            $key = $request->get('key');
 
-            if(empty($key) || !$this->isAuthorized($key)){
-                return abort(401);
+            if(request()->getMethod() == 'POST'){
+                if(request()->get('token') !==  config('zoom.events_token')){
+                    return abort(401);
+                }
+            }else{
+                $key = $request->get('key');
+
+                if(empty($key) || !$this->isAuthorized($key)){
+                    return abort(401);
+                }
             }
+
 
             /*if(!$request->hasHeader('authorization') || $request->header('authorization') !== config('zoom.events_token')){
                 Log::warning('ZoomEvents -> Unauthorized request ' . $request->getUri());

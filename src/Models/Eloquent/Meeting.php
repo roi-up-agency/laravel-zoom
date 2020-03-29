@@ -25,6 +25,27 @@ class Meeting extends Model
         return $this->hasOne(Host::class, 'host_id', 'host_id');
     }
 
+    public function ifManualApproveNeeded(){
+        return json_decode($this->settings)->approval_type === \RoiUp\Zoom\Models\Zoom\Meeting::SETTINGS_APPROVAL_TYPE_MANUAL;
+    }
+
+    public function mustBeRegisteredInAllOccurrences(){
+        return json_decode($this->settings)->registration_type === \RoiUp\Zoom\Models\Zoom\Meeting::SETTINGS_REGISTRATION_TYPE_ONCE_ALL_OCCURRENCES;
+    }
+
+    public function getSetting($setting){
+        return json_decode($this->settings)->$setting;
+    }
+
+    public function registrantOccurrences($registrantId){
+        $registrants = Registrant::whereMeetingId($this->zoom_id)->whereRegistrantId($registrantId)->get();
+        $occurrences = [];
+        foreach ($registrants as $registrant){
+            $occurrences[] = Occurrence::whereOccurrenceId($registrant->occurrence_id)->first();
+        }
+
+        return $occurrences;
+    }
 
     public function fillFromZoomModel(ZoomMeeting $meeting, $hostId){
 

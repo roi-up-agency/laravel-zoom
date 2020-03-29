@@ -8,6 +8,8 @@ namespace RoiUp\Zoom\Listeners;
  use RoiUp\Zoom\Events\Notifications\SendDeleteOccurrence;
  use RoiUp\Zoom\Events\Notifications\SendDeniedRegistrant;
  use RoiUp\Zoom\Events\Notifications\SendNewRegistrant;
+ use RoiUp\Zoom\Models\Eloquent\Meeting;
+ use RoiUp\Zoom\Models\Zoom\Meeting as ZoomMeeting;
  use RoiUp\Zoom\Notifications\RegistrantConfirm;
  use RoiUp\Zoom\Events\Notifications\SendRegistrantConfirm;
  use RoiUp\Zoom\Helpers\RegistrantLinks;
@@ -23,20 +25,44 @@ namespace RoiUp\Zoom\Listeners;
 
         $registrant = $event->registrant;
         $meeting    = $registrant->meeting;
-        $occurrence = $registrant->occurrence;
         $host       = $meeting->host;
+        
+        $arrDate = [];
+        foreach($registrant->occurrences as $occurrence){
+            if(is_array($occurrence)){
+                $occurrence = (object)$occurrence;
+            }
+            $date = $this->getFormattedDate($occurrence->start_time);
+
+            switch ($meeting->getSetting(ZoomMeeting::SETTINGS_KEY_REGISTRATION_TYPE)) {
+                case ZoomMeeting::SETTINGS_REGISTRATION_TYPE_ONCE_ALL_OCCURRENCES:
+                case ZoomMeeting::SETTINGS_REGISTRATION_TYPE_ONCE_ONE_OCCURRENCES:
+                    $arrDate[] = $date;
+                    break;
+                case ZoomMeeting::SETTINGS_REGISTRATION_TYPE_ONCE_MANY_OCCURRENCES:
+                    $registrant->occurrence_id = $occurrence->occurrence_id;
+                    $link = RegistrantLinks::generateActionLink('cancel', $registrant);
+                    $link = '<a href="'. $link. '" target="_blank">Cancelar suscripción para esta recurrencia</a>';
+                    $arrDate[] = $this->getFormattedDate($occurrence->start_time) . ' - ' . $link;
+                    break;
+            }
+
+        }
 
         $data = [
             'firstName'     => $registrant->first_name,
             'lastName'      => $registrant->last_name,
             'topic'         => $meeting->topic,
             'ownerEmail'    => $host->email,
-            'date'          => $this->getFormattedDate($occurrence->start_time) . ' ' . $meeting->timezone,
+            'date'          => $arrDate,
+            'timezone'      => $meeting->timezone,
             'calendarLinks' => RegistrantLinks::getCalendarLinks($meeting, $registrant->registrant_id),
             'joinUrl'       => $registrant->join_url,
             'password'      => !empty($meeting->password) ? $meeting->password : '',
-            'cancelRegistrationLink'      => RegistrantLinks::generateActionLink('cancel', $registrant),
         ];
+        if($meeting->getSetting(ZoomMeeting::SETTINGS_KEY_REGISTRATION_TYPE) !== ZoomMeeting::SETTINGS_REGISTRATION_TYPE_ONCE_MANY_OCCURRENCES){
+            $data['cancelRegistrationLink']   = RegistrantLinks::generateActionLink('cancel', $registrant, false);
+        }
 
         $data = array_merge($this->initEmailData(), $data);
 
@@ -47,18 +73,28 @@ namespace RoiUp\Zoom\Listeners;
 
          $registrant = $event->registrant;
          $meeting    = $registrant->meeting;
-         $occurrence = $registrant->occurrence;
          $host       = $meeting->host;
 
-         $text = trans('zoom::emails.registration_new_text', ['topic' => $meeting->topic, 'date' => $this->getFormattedDate($occurrence->start_time) . ' ' . $meeting->timezone, 'registrant_email' => $registrant->email, 'registrant_name' => $registrant->fullName()]);
+         $arrDate = [];
+         foreach($registrant->occurrences as $occurrence){
+             if(is_array($occurrence)){
+                 $occurrence = (object)$occurrence;
+             }
+             $arrDate[] = $this->getFormattedDate($occurrence->start_time);
+         }
+
+         $text = trans('zoom::emails.registration_new_text', ['topic' => $meeting->topic, 'date' => implode(', ', $arrDate) . ' ' . $meeting->timezone, 'registrant_email' => $registrant->email, 'registrant_name' => $registrant->fullName()]);
 
          $data = [
              'name'         => $host->first_name . ' ' . $host->last_name,
              'text'         => $text,
-             'approveLink'  => RegistrantLinks::generateActionLink('approve', $registrant),
-             'denyLink'     => RegistrantLinks::generateActionLink('deny', $registrant),
          ];
 
+         if($meeting->ifManualApproveNeeded()){
+             $data['approveLink']  = RegistrantLinks::generateActionLink('approve', $registrant, false);
+             $data['denyLink']     = RegistrantLinks::generateActionLink('deny', $registrant, false);
+         }
+         
          $data = array_merge($this->initEmailData(), $data);
 
          $mail = new SimpleEmail($data);
@@ -70,10 +106,15 @@ namespace RoiUp\Zoom\Listeners;
 
          $registrant = $event->registrant;
          $meeting    = $registrant->meeting;
-         $occurrence = $registrant->occurrence;
 
+         foreach($registrant->occurrences as $occurrence){
+             if(is_array($occurrence)){
+                 $occurrence = (object)$occurrence;
+             }
+             $arrDate[] = $this->getFormattedDate($occurrence->start_time);
+         }
 
-         $text = trans('zoom::emails.registration_approved_text', ['topic' => $meeting->topic, 'date' => $this->getFormattedDate($occurrence->start_time) . ' ' . $meeting->timezone]);
+         $text = trans('zoom::emails.registration_approved_text', ['topic' => $meeting->topic, 'date' => implode(', ', $arrDate) . ' ' . $meeting->timezone]);
 
          $data = [
              'name'     => $registrant->first_name . ' ' . $registrant->last_name,
@@ -90,10 +131,15 @@ namespace RoiUp\Zoom\Listeners;
 
          $registrant = $event->registrant;
          $meeting    = $registrant->meeting;
-         $occurrence = $registrant->occurrence;
 
+         foreach($registrant->occurrences as $occurrence){
+             if(is_array($occurrence)){
+                 $occurrence = (object)$occurrence;
+             }
+             $arrDate[] = $this->getFormattedDate($occurrence->start_time);
+         }
 
-         $text = trans('zoom::emails.registration_cancelled_text', ['topic' => $meeting->topic, 'date' => $this->getFormattedDate($occurrence->start_time) . ' ' . $meeting->timezone]);
+         $text = trans('zoom::emails.registration_cancelled_text', ['topic' => $meeting->topic, 'date' => implode(', ', $arrDate) . ' ' . $meeting->timezone]);
 
          $data = [
              'name'     => $registrant->first_name . ' ' . $registrant->last_name,
@@ -110,10 +156,15 @@ namespace RoiUp\Zoom\Listeners;
 
          $registrant = $event->registrant;
          $meeting    = $registrant->meeting;
-         $occurrence = $registrant->occurrence;
 
+         foreach($registrant->occurrences as $occurrence){
+             if(is_array($occurrence)){
+                 $occurrence = (object)$occurrence;
+             }
+             $arrDate[] = $this->getFormattedDate($occurrence->start_time);
+         }
 
-         $text = trans('zoom::emails.registration_denied_text', ['topic' => $meeting->topic, 'date' => $this->getFormattedDate($occurrence->start_time) . ' ' . $meeting->timezone]);
+         $text = trans('zoom::emails.registration_denied_text', ['topic' => $meeting->topic, 'date' => implode(', ', $arrDate) . ' ' . $meeting->timezone]);
 
          $data = [
              'name'     => $registrant->first_name . ' ' . $registrant->last_name,

@@ -61,7 +61,10 @@
 
                                             <td valign="top" mc:edit="welcomeEditTxtFirst" style="width:80%;color:#505050;font-family:Helvetica;font-size:14px;padding-top:0.714em;">
                                                 <h3><strong>When is your event</strong></h3>
-                                                <p>{{$date}}</p>
+                                                @foreach($date as $day)
+                                                    <p>{!! $day !!}</p>
+                                                @endforeach
+                                                <p>Timezone: {{$timezone}}</p>
                                                 <p><a href="{{$calendarLinks['download']}}">Download .ics</a> and add the event to your calendar</p>
                                             </td>
 
@@ -114,20 +117,21 @@
 
                     </td>
                 </tr>
+                @if(!empty($cancelRegistrationLink))
+                    <tr>
+                        <td align="center" valign="top">
+                            <!-- BEGIN BODY // -->
 
-                <tr>
-                    <td align="center" valign="top">
-                        <!-- BEGIN BODY // -->
-
-                        <table border="0" cellpadding="0" cellspacing="0" id="templateContainerMiddleBtm" width="100%">
-                            <tr>
-                                <td class="bodyContent" valign="top" mc:edit="welcomeEdit-11">
-                                    <h4>You can <a href="{{$cancelRegistrationLink}}">cancel</a> your registration at any time.</h4>
-                                </td>
-                            </tr>
-                        </table><!-- // END BODY -->
-                    </td>
-                </tr>
+                            <table border="0" cellpadding="0" cellspacing="0" id="templateContainerMiddleBtm" width="100%">
+                                <tr>
+                                    <td class="bodyContent" valign="top" mc:edit="welcomeEdit-11">
+                                        <h4>You can <a href="{{$cancelRegistrationLink}}">cancel</a> your registration at any time.</h4>
+                                    </td>
+                                </tr>
+                            </table><!-- // END BODY -->
+                        </td>
+                    </tr>
+                @endif
                 @if(!empty($footerContent))
                     <tr>
                         <td align="center" class="unSubContent" id="bodyCellFooter" valign="top">

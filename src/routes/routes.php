@@ -19,6 +19,7 @@ use RoiUp\Zoom\Events\ZoomEvent;
 Route::prefix('zoom')->group(function () {
     Route::prefix('actions')->middleware(RegistrantActions::class)->group(function () {
         Route::prefix('registrant')->group(function () {
+            Route::post('add', RegistrantController::class . '@add')->name('registrant_add');
             Route::get('approve', RegistrantController::class . '@approve')->name('registrant_approve');
             Route::get('deny', RegistrantController::class . '@deny')->name('registrant_deny');
             Route::get('cancel', RegistrantController::class . '@cancel')->name('registrant_cancel');

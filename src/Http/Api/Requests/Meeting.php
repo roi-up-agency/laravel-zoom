@@ -150,7 +150,7 @@ class Meeting extends Request
      * @param array $registrant
      * @return array|mixed
      */
-    public function addRegistrant($meetingId, $registrant)
+    public function addRegistrant($meetingId, $registrant, $occurrenceId = null)
     {
         $allowed_fields = ["email", "first_name", "last_name", "address", "city", "country", "zip", "state", "phone", "industry", "org", "job_title", "purchasing_time_frame", "role_in_purchase_process", "no_of_employees", "comments", "custom_questions"];
         $reg = [];
@@ -159,7 +159,13 @@ class Meeting extends Request
                 $reg[$field] = $registrant->$field;
             }
         }
-        return $this->post("meetings/{$meetingId}/registrant", $reg);
+
+        $queryString = '';
+        if($occurrenceId !== null){
+            $queryString .= '?occurrence_ids=' . $occurrenceId;
+        }
+
+        return $this->post("meetings/{$meetingId}/registrants". $queryString, $reg);
     }
 
     /**
