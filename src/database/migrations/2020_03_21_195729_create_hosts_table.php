@@ -18,8 +18,10 @@ class CreateHostsTable extends Migration
             $table->string('host_id')->index();
             $table->string('first_name');
             $table->string('last_name');
-            $table->string('email');
+            $table->string('email')->index();
+            $table->text('password')->index();
             $table->integer('type');
+            $table->enum('invitation_status', ['pending', 'accepted'])->nullable()->default(null);
             $table->timestamps();
         });
     }

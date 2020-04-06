@@ -20,10 +20,10 @@ class User extends Request
      * @param array $data
      * @return array|mixed
      */
-    public function create(Model $user)
+    public function create(Model $user, $action = 'create')
     {
         $request = [
-            'action' => 'create',
+            'action' => $action,
             'user_info' => [
                 "email" => $user->email, //required
                 "type" => $user->type != '' ? $user->type : '1', // required
@@ -82,6 +82,17 @@ class User extends Request
     }
 
     /**
+     * Update
+     *
+     * @param string $userId
+     * @param string $password
+     * @return array|mixed
+     */
+    public function updatePassword($userId, $password)
+    {
+        return $this->put("users/{$userId}/password", ['password' => $password]);
+    }
+    /**
      * Delete
      *
      * @param string $userId
@@ -92,7 +103,7 @@ class User extends Request
         return $this->delete("users/{$userId}");
     }
 
- 
+
 
     /**
      * Users Assistants List
@@ -103,6 +114,17 @@ class User extends Request
     public function assistantsList(string $userId)
     {
         return $this->get("users/{$userId}/assistants");
+    }
+
+    /**
+     * Users Assistants List
+     *
+     * @param string $userId
+     * @return array|mixed
+     */
+    public function emailExists(string $email)
+    {
+        return $this->get("users/email=email=". $email);
     }
 
     public function switch(string $accountId, string $userId)

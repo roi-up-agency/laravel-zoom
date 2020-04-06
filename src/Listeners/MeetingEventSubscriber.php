@@ -8,6 +8,8 @@ namespace RoiUp\Zoom\Listeners;
  use RoiUp\Zoom\Events\Meeting\MeetingStarted;
  use RoiUp\Zoom\Events\Meeting\MeetingEnded;
  use RoiUp\Zoom\Events\Notifications\SendDeleteOccurrence;
+ use RoiUp\Zoom\Events\User\UserVerified;
+ use RoiUp\Zoom\Models\Eloquent\Host;
  use RoiUp\Zoom\Models\Eloquent\Meeting;
  use RoiUp\Zoom\Models\Eloquent\Meeting as EloquentModel;
  use RoiUp\Zoom\Models\Eloquent\Occurrence;
@@ -25,9 +27,18 @@ namespace RoiUp\Zoom\Listeners;
 
         $this->logEvent($event);
 
-        $model = Meeting::whereZoomId($event->getObject()['id'])->first();
-        $model->status = 'created';
-        $model->save();
+        if($event->getObject()['type'] === 4){
+            $host = Host::whereHostId($event->getObject()['host_id'])->whereInvitationStatus('pending')->first();
+            if(!empty($host)){
+                $host->invitation_status = 'accepted';
+                $host->save();
+                event(new UserVerified($host));
+            }
+        }else{
+            $model = Meeting::whereZoomId($event->getObject()['id'])->first();
+            $model->status = 'created';
+            $model->save();
+        }
 
         $this->logFinishEvent();
     }
