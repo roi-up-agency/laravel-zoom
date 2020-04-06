@@ -40,7 +40,7 @@ class User extends Request
      *
      * @return array
      */
-    public function list()
+    public function getList()
     {
         $response = $this->get('users');
         $users = [];
@@ -127,7 +127,7 @@ class User extends Request
         return $this->get("users/email=email=". $email);
     }
 
-    public function switch(string $accountId, string $userId)
+    public function switchAccount(string $accountId, string $userId)
     {
         return $this->patch("accounts/{$accountId}/users/{$userId}/account", []);
     }
