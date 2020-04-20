@@ -100,8 +100,8 @@ class NotificationsEventSubscriber
         ];
 
         if($meeting->ifManualApproveNeeded()){
-            $data['approveLink']  = RegistrantLinks::generateActionLink('approve', $registrant, false);
-            $data['denyLink']     = RegistrantLinks::generateActionLink('deny', $registrant, false);
+            $data['approveLink']  = RegistrantLinks::generateActionLink('approve', $registrant, $meeting->getSetting(ZoomMeeting::SETTINGS_KEY_REGISTRATION_TYPE) === ZoomMeeting::SETTINGS_REGISTRATION_TYPE_ONCE_ONE_OCCURRENCES ? true : false);
+            $data['denyLink']     = RegistrantLinks::generateActionLink('deny', $registrant, $meeting->getSetting(ZoomMeeting::SETTINGS_KEY_REGISTRATION_TYPE) === ZoomMeeting::SETTINGS_REGISTRATION_TYPE_ONCE_ONE_OCCURRENCES ? true : false);
         }
 
         $data = array_merge($this->initEmailData(), $data);
@@ -240,3 +240,4 @@ class NotificationsEventSubscriber
         ];
     }
 }
+

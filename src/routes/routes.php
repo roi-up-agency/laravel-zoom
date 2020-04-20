@@ -36,8 +36,17 @@ Route::prefix('zoom')->group(function () {
 
             if($eventClass !== null){
                 Log::debug('ZoomEvent Received -> ' . request()->getUri());
-                Log::debug(json_encode(request()->all()));
+                $data = request()->all();
+                if(isset($data['event'])){
+                    $entryLog = $data['event'];
+                    if(isset($data['payload']['object'])){
+                        $entryLog .= ' -- ' . $data['payload']['object']['id'];
+                    }
+                    Log::debug($entryLog);
+                }
+
                 event(new $eventClass($requestData));
+
             }else{
                 Log::debug($requestData->event . ' failed to Dispatch, event not found');
             }

@@ -2,26 +2,26 @@
 
 namespace RoiUp\Zoom\Listeners;
 
- use RoiUp\Zoom\Events\Meeting\MeetingCreated;
- use RoiUp\Zoom\Events\Meeting\MeetingDeleted;
- use RoiUp\Zoom\Events\Meeting\MeetingRegistrantApproved;
- use RoiUp\Zoom\Events\Meeting\MeetingRegistrantCancelled;
- use RoiUp\Zoom\Events\Meeting\MeetingRegistrantCreated;
- use RoiUp\Zoom\Events\Meeting\MeetingRegistrantDenied;
- use RoiUp\Zoom\Events\Meeting\MeetingUpdated;
- use RoiUp\Zoom\Events\Meeting\MeetingStarted;
- use RoiUp\Zoom\Events\Meeting\MeetingEnded;
- use RoiUp\Zoom\Events\Notifications\SendApproveRegistrant;
- use RoiUp\Zoom\Events\Notifications\SendCancelRegistrant;
- use RoiUp\Zoom\Events\Notifications\SendDeniedRegistrant;
- use RoiUp\Zoom\Events\Notifications\SendNewRegistrant;
- use RoiUp\Zoom\Events\Notifications\SendRegistrantConfirm;
- use RoiUp\Zoom\Models\Eloquent\Meeting;
- use RoiUp\Zoom\Models\Zoom\Registrant;
- use RoiUp\Zoom\Models\Zoom\Meeting as ZoomMeeting;
- use RoiUp\Zoom\Models\Eloquent\Registrant as RegistrantModel;
+use RoiUp\Zoom\Events\Meeting\MeetingCreated;
+use RoiUp\Zoom\Events\Meeting\MeetingDeleted;
+use RoiUp\Zoom\Events\Meeting\MeetingRegistrantApproved;
+use RoiUp\Zoom\Events\Meeting\MeetingRegistrantCancelled;
+use RoiUp\Zoom\Events\Meeting\MeetingRegistrantCreated;
+use RoiUp\Zoom\Events\Meeting\MeetingRegistrantDenied;
+use RoiUp\Zoom\Events\Meeting\MeetingUpdated;
+use RoiUp\Zoom\Events\Meeting\MeetingStarted;
+use RoiUp\Zoom\Events\Meeting\MeetingEnded;
+use RoiUp\Zoom\Events\Notifications\SendApproveRegistrant;
+use RoiUp\Zoom\Events\Notifications\SendCancelRegistrant;
+use RoiUp\Zoom\Events\Notifications\SendDeniedRegistrant;
+use RoiUp\Zoom\Events\Notifications\SendNewRegistrant;
+use RoiUp\Zoom\Events\Notifications\SendRegistrantConfirm;
+use RoiUp\Zoom\Models\Eloquent\Meeting;
+use RoiUp\Zoom\Models\Zoom\Registrant;
+use RoiUp\Zoom\Models\Zoom\Meeting as ZoomMeeting;
+use RoiUp\Zoom\Models\Eloquent\Registrant as RegistrantModel;
 
- class RegistrantEventSubscriber extends AbstractEventSubscriber
+class RegistrantEventSubscriber extends AbstractEventSubscriber
 {
 
     private $actions = ['Created', 'Approved', 'Cancelled', 'Denied'];
@@ -31,37 +31,44 @@ namespace RoiUp\Zoom\Listeners;
      */
     public function onRegistrantCreated(MeetingRegistrantCreated $event) {
 
-        $this->logEvent($event);
-        $zoomRegistrant = new Registrant();
-        $zoomRegistrant->create($event->getObject()['registrant']);
-
         $meetingId = $event->getObject()['id'];
 
         $meeting = Meeting::whereZoomId($meetingId)->first();
 
-        $registrantModel = null;
+        if(!empty($meeting)){
 
-        switch ($meeting->getSetting(ZoomMeeting::SETTINGS_KEY_REGISTRATION_TYPE)){
-            case ZoomMeeting::SETTINGS_REGISTRATION_TYPE_ONCE_ALL_OCCURRENCES:
-            case ZoomMeeting::SETTINGS_REGISTRATION_TYPE_ONCE_MANY_OCCURRENCES:
-                $occurrences = isset($event->getObject()['occurrences']) ? $event->getObject()['occurrences'] : $meeting->occurrences;
-                foreach($occurrences as $occurrence){
-                    $occurrenceId = is_array($occurrence) ? $occurrence['occurrence_id'] : $occurrence->occurrence_id;
-                    $this->saveRegistrant($zoomRegistrant, $meetingId, $occurrenceId);
-                }
-                break;
-            case ZoomMeeting::SETTINGS_REGISTRATION_TYPE_ONCE_ONE_OCCURRENCES:
-                $this->saveRegistrant($zoomRegistrant, $meetingId, $event->getObject()['occurrences'][0]['occurrence_id']);
-                break;
+            $this->logEvent($event);
+
+            $zoomRegistrant = new Registrant();
+            $zoomRegistrant->create($event->getObject()['registrant']);
+
+            $registrantModel = null;
+
+            switch ($meeting->getSetting(ZoomMeeting::SETTINGS_KEY_REGISTRATION_TYPE)){
+                case ZoomMeeting::SETTINGS_REGISTRATION_TYPE_ONCE_ALL_OCCURRENCES:
+                case ZoomMeeting::SETTINGS_REGISTRATION_TYPE_ONCE_MANY_OCCURRENCES:
+                    $occurrences = isset($event->getObject()['occurrences']) ? $event->getObject()['occurrences'] : $meeting->occurrences;
+                    foreach($occurrences as $occurrence){
+                        $occurrenceId = is_array($occurrence) ? $occurrence['occurrence_id'] : $occurrence->occurrence_id;
+                        $this->saveRegistrant($zoomRegistrant, $meetingId, $occurrenceId);
+                    }
+                    break;
+                case ZoomMeeting::SETTINGS_REGISTRATION_TYPE_ONCE_ONE_OCCURRENCES:
+                    $this->saveRegistrant($zoomRegistrant, $meetingId, $event->getObject()['occurrences'][0]['occurrence_id']);
+                    break;
+            }
+
+            $registrantModel = $this->getRegistrantFromEvent($event);
+
+            event(new SendRegistrantConfirm($registrantModel));
+
+            event(new SendNewRegistrant($registrantModel));
+
+            $this->logFinishEvent();
+        }else{
+            $this->logNotFoundEvent();
         }
 
-        $registrantModel = $this->getRegistrantFromEvent($event);
-
-        event(new SendRegistrantConfirm($registrantModel));
-
-        event(new SendNewRegistrant($registrantModel));
-
-        $this->logFinishEvent();
     }
 
     private function saveRegistrant($zoomRegistrant, $meetingId, $occurrenceId){
@@ -78,20 +85,26 @@ namespace RoiUp\Zoom\Listeners;
      */
     public function onRegistrantApproved(MeetingRegistrantApproved $event) {
 
-        $this->logEvent($event);
-
         $registrant = $this->getRegistrantFromEvent($event);
 
-        foreach ($registrant->occurrences as $occurrence){
-            if(is_array($occurrence)){
-                $occurrence = (object)$occurrence;
+        if(!empty($registrant)){
+            $this->logEvent($event);
+
+            foreach ($registrant->occurrences as $occurrence){
+                if(is_array($occurrence)){
+                    $occurrence = (object)$occurrence;
+                }
+                RegistrantModel::whereMeetingId($registrant->meeting_id)->whereRegistrantId($registrant->registrant_id)->whereOccurrenceId($occurrence->occurrence_id)->update(['status' => 'approved']);
             }
-            RegistrantModel::whereMeetingId($registrant->meeting_id)->whereRegistrantId($registrant->registrant_id)->whereOccurrenceId($occurrence->occurrence_id)->update(['status' => 'approved']);
+
+            event(new SendApproveRegistrant($registrant));
+            $this->logFinishEvent();
+        }else{
+            $this->logNotFoundEvent();
         }
 
-        event(new SendApproveRegistrant($registrant));
 
-        $this->logFinishEvent();
+
     }
 
     /**
@@ -99,19 +112,23 @@ namespace RoiUp\Zoom\Listeners;
      */
     public function onRegistrantCancelled(MeetingRegistrantCancelled $event) {
 
-        $this->logEvent($event);
-
         $registrant = $this->getRegistrantFromEvent($event);
-        foreach ($registrant->occurrences as $occurrence){
-            if(is_array($occurrence)){
-                $occurrence = (object)$occurrence;
+
+        if(!empty($registrant)) {
+            $this->logEvent($event);
+            foreach ($registrant->occurrences as $occurrence) {
+                if (is_array($occurrence)) {
+                    $occurrence = (object)$occurrence;
+                }
+                RegistrantModel::whereMeetingId($registrant->meeting_id)->whereRegistrantId($registrant->registrant_id)->whereOccurrenceId($occurrence->occurrence_id)->delete();
             }
-            RegistrantModel::whereMeetingId($registrant->meeting_id)->whereRegistrantId($registrant->registrant_id)->whereOccurrenceId($occurrence->occurrence_id)->delete();
+
+            event(new SendCancelRegistrant($registrant));
+
+            $this->logFinishEvent();
+        }else{
+            $this->logNotFoundEvent();
         }
-
-        event(new SendCancelRegistrant($registrant));
-
-        $this->logFinishEvent();
     }
 
 
@@ -120,18 +137,23 @@ namespace RoiUp\Zoom\Listeners;
      */
     public function onRegistrantDenied(MeetingRegistrantDenied $event) {
 
-        $this->logEvent($event);
         $registrant = $this->getRegistrantFromEvent($event);
-        foreach ($registrant->occurrences as $occurrence){
-            if(is_array($occurrence)){
-                $occurrence = (object)$occurrence;
+
+        if(!empty($registrant)) {
+            $this->logEvent($event);
+            foreach ($registrant->occurrences as $occurrence){
+                if(is_array($occurrence)){
+                    $occurrence = (object)$occurrence;
+                }
+                RegistrantModel::whereMeetingId($registrant->meeting_id)->whereRegistrantId($registrant->registrant_id)->whereOccurrenceId($occurrence->occurrence_id)->update(['status' => 'denied']);
             }
-            RegistrantModel::whereMeetingId($registrant->meeting_id)->whereRegistrantId($registrant->registrant_id)->whereOccurrenceId($occurrence->occurrence_id)->update(['status' => 'denied']);
+
+            event(new SendDeniedRegistrant($registrant));
+
+            $this->logFinishEvent();
+        }else{
+            $this->logNotFoundEvent();
         }
-
-        event(new SendDeniedRegistrant($registrant));
-
-        $this->logFinishEvent();
     }
 
 
@@ -160,8 +182,10 @@ namespace RoiUp\Zoom\Listeners;
         $meetingId = $event->getObject()['id'];
 
         $registrant = RegistrantModel::whereMeetingId($meetingId)->whereRegistrantId($zoomRegistrant->id)->first();
+        if(!empty($registrant)){
+            $registrant->occurrences = isset($event->getObject()['occurrences']) ? $event->getObject()['occurrences'] : $registrant->meeting->registrantOccurrences($registrant->registrant_id);
+        }
 
-        $registrant->occurrences = isset($event->getObject()['occurrences']) ? $event->getObject()['occurrences'] : $registrant->meeting->registrantOccurrences($registrant->registrant_id);
 
         return $registrant;
     }

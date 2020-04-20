@@ -20,7 +20,9 @@ class ZoomEvent
         $this->operator     = !empty($payload->operator) ? $payload->operator : null;
         $this->operatorId   = !empty($payload->operator_id) ? $payload->operator_id : null;
         $this->object       = $payload->object;
-        
+        if(isset($this->object['id'])){
+            $this->object['id'] = (string)$this->object['id'];
+        }
     }
 
     /**

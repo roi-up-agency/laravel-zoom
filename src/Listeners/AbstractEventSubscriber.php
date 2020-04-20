@@ -20,5 +20,8 @@ abstract class AbstractEventSubscriber
     protected function logFinishEvent(){
         Log::debug('Zoom Transaction Completed');
     }
+    protected function logNotFoundEvent(){
+        Log::debug('Zoom Entity not found');
+    }
 
 }

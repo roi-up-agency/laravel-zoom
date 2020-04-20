@@ -20,7 +20,7 @@ class Meeting extends Model
     const SETTINGS_KEY_REGISTRATION_TYPE = 'registration_type';
     const SETTINGS_KEY_AUDIO             = 'audio';
     const SETTINGS_KEY_AUTO_RECORDING    = 'auto_recording';
-    const SETTINGS_KEY_REGISTRANTS_EMAIL = 'registrants_email_notifications';
+    const SETTINGS_KEY_REGISTRANTS_EMAIL = 'registrants_email_notification';
 
     const SETTINGS_APPROVAL_TYPE_AUTO                = 0;
     const SETTINGS_APPROVAL_TYPE_MANUAL              = 1;
@@ -72,7 +72,7 @@ class Meeting extends Model
             "enforce_login" => '', // boolean
             "enforce_login_domains" => '', // string
             "alternative_hosts" => '', // strin
-            "registrants_email_notifications" => '', // strin
+            "registrants_email_notification" => '', // strin
         ],
     ];
 
