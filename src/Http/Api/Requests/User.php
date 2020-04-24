@@ -92,6 +92,18 @@ class User extends Request
     {
         return $this->put("users/{$userId}/password", ['password' => $password]);
     }
+
+    /**
+     * Update
+     *
+     * @param string $userId
+     * @param string $email
+     * @return array|mixed
+     */
+    public function updateEmail($userId, $email)
+    {
+        return $this->put("users/{$userId}/email", ['email' => $email]);
+    }
     /**
      * Delete
      *
