@@ -94,6 +94,7 @@ class Meeting extends Model
                 $occurrenceModel = new Occurrence();
                 $occurrenceModel->meeting_id = $this->zoom_id;
                 $occurrenceModel->fill($occurrence);
+                $occurrenceModel->status = 'available';
                 $occurrenceModel->save();
             }
         }

@@ -10,11 +10,13 @@ class ZoomEvent
     protected $operator;
     protected $operatorId;
     protected $object;
+    protected $payload;
 
     public function __construct($event)
     {
         $payload            = (object)$event->payload;
 
+        $this->payload      = $payload;
         $this->event        = $event->event;
         $this->accountId    = $payload->account_id;
         $this->operator     = !empty($payload->operator) ? $payload->operator : null;
@@ -110,4 +112,7 @@ class ZoomEvent
         return isset($map[$eventName]) ? $map[$eventName] : null;
     }
 
+    public function getPayload(){
+        return $this->payload;
+    }
 }

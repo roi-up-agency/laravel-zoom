@@ -47,7 +47,7 @@ class Meeting extends Request
 
         if(isset($response['code']) && $response['code'] === 201){
             $meetingModel->uuid = $response['uuid'];
-            $meetingModel->zoom_id = $response['id'];
+            $meetingModel->zoom_id = (string)$response['id'];
             $meetingModel->join_url = $response['join_url'];
             $meetingModel->registration_url = !empty($response['registration_url']) ?  $response['registration_url'] : null;
             $meetingModel->start_url = !empty($response['start_url']) ?  $response['start_url'] : null;
@@ -94,11 +94,11 @@ class Meeting extends Request
 
         $removeOccurrences = false;
 
-        if($actualMeeting->recurrence !== json_encode($meeting->recurrence)){
+        if($actualMeeting->recurrence !== json_encode($meeting->recurrence) || $actualMeeting->start_time !== $meeting->start_time){
             $removeOccurrences = true;
             foreach($actualMeeting->occurrences as $occurrence){
-                if(sizeof($occurrence->approved) > 0){
-                    return "There is some registrants approved for one ore more occurrences of this meeting";
+                if(RegistrantModel::whereMeetingId($meetingId)->whereOccurrenceId($occurrence->occurrence_id)->whereStatus('approved')->count() > 0){
+                    return ['status' => 'error', 'code' => 403, 'message' => "There is some registrants approved for one ore more occurrences of this meeting"];
                 }
             }
         }
@@ -164,7 +164,7 @@ class Meeting extends Request
         if($occurrenceId !== null){
             $queryString .= '?occurrence_ids=' . $occurrenceId;
         }
-
+        
         return $this->post("meetings/{$meetingId}/registrants". $queryString, $reg);
     }
 

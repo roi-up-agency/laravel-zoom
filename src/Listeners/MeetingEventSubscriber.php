@@ -29,11 +29,14 @@ class MeetingEventSubscriber extends AbstractEventSubscriber
             $host = Host::whereHostId($event->getObject()['host_id'])->whereInvitationStatus('pending')->first();
             if(!empty($host)){
                 $this->logEvent($event);
-
-                $host->invitation_status = 'accepted';
-                $host->save();
-                event(new UserVerified($host));
-                $this->logFinishEvent();
+                try{
+                    $host->invitation_status = 'accepted';
+                    $host->save();
+                    event(new UserVerified($host));
+                    $this->logFinishEvent();
+                }catch (\Exception $exception){
+                    $this->logFailedEvent($exception);
+                }
             }else{
                 $this->logNotFoundEvent();
             }
@@ -42,11 +45,15 @@ class MeetingEventSubscriber extends AbstractEventSubscriber
             if(!empty($model)){
 
                 $this->logEvent($event);
+                try{
+                    $model->status = 'created';
+                    $model->save();
 
-                $model->status = 'created';
-                $model->save();
+                    $this->logFinishEvent();
+                }catch (\Exception $exception){
+                    $this->logFailedEvent($exception);
+                }
 
-                $this->logFinishEvent();
             }else{
                 $this->logNotFoundEvent();
             }
@@ -64,31 +71,35 @@ class MeetingEventSubscriber extends AbstractEventSubscriber
         $meeting = Meeting::whereZoomId($event->getObject()['id'])->first();
         if(!empty($meeting)){
             $this->logEvent($event);
-            $occurrences = isset($event->getObject()['occurrences']) ? $event->getObject()['occurrences'] : $meeting->occurrences;
+            try{
+                $occurrences = isset($event->getObject()['occurrences']) ? $event->getObject()['occurrences'] : $meeting->occurrences;
 
-            foreach($occurrences as $occurrence){
+                foreach($occurrences as $occurrence){
 
-                $item = Occurrence::whereOccurrenceId($occurrence['occurrence_id'])->whereMeetingId($meeting->zoom_id)->first();
+                    $item = Occurrence::whereOccurrenceId($occurrence['occurrence_id'])->whereMeetingId($meeting->zoom_id)->first();
 
-                if($item == null){
-                    continue;
+                    if($item == null){
+                        continue;
+                    }
+
+                    $item->registrants->each(function($registrant){
+                        if($registrant->status !== 'denied'){
+                            event(new SendDeleteOccurrence($registrant));
+                        }
+                        $registrant->delete();
+                    });
+
+                    $item->delete();
                 }
 
-                $item->registrants->each(function($registrant){
-                    if($registrant->status !== 'denied'){
-                        event(new SendDeleteOccurrence($registrant));
-                    }
-                    $registrant->delete();
-                });
+                if(Occurrence::whereMeetingId($meeting->zoom_id)->count() == 0){
+                    $meeting->delete();
+                }
 
-                $item->delete();
+                $this->logFinishEvent();
+            }catch (\Exception $exception){
+                $this->logFailedEvent($exception);
             }
-
-            if(Occurrence::whereMeetingId($meeting->zoom_id)->count() == 0){
-                $meeting->delete();
-            }
-
-            $this->logFinishEvent();
         }else{
             $this->logNotFoundEvent();
         }
@@ -104,37 +115,39 @@ class MeetingEventSubscriber extends AbstractEventSubscriber
 
         $meeting = EloquentModel::whereZoomId($event->getObject()['id'])->first();
         if(!empty($meeting)) {
-
             $this->logEvent($event);
+            try{
+                $changes = $event->getObject();
 
-            $changes = $event->getObject();
+                unset($changes['id']);
+                foreach ($changes as $field => $value) {
 
-            unset($changes['id']);
-            foreach ($changes as $field => $value) {
-
-                switch ($field) {
-                    case 'recurrence':
-                        $meeting->$field = json_encode($value);
-                        break;
-                    case 'settings':
-                        $meeting->mergeSettings($value);
-                        break;
-                    case 'occurrences':
-                        $meeting->updateOccurrences($value);
-                        break;
-                    default:
-                        if (in_array($field, $meeting->getFillable())) {
-                            $meeting->$field = $value;
-                        }
-                        break;
+                    switch ($field) {
+                        case 'recurrence':
+                            $meeting->$field = json_encode($value);
+                            break;
+                        case 'settings':
+                            $meeting->mergeSettings($value);
+                            break;
+                        case 'occurrences':
+                            $meeting->updateOccurrences($value);
+                            break;
+                        default:
+                            if (in_array($field, $meeting->getFillable())) {
+                                $meeting->$field = $value;
+                            }
+                            break;
+                    }
                 }
+
+                $meeting->duration = $meeting->occurrences[0]['duration'];
+                $meeting->start_time = $meeting->occurrences[0]['start_time'];
+
+                $meeting->save();
+                $this->logFinishEvent();
+            }catch (\Exception $exception){
+                $this->logFailedEvent($exception);
             }
-
-            $meeting->duration = $meeting->occurrences[0]['duration'];
-            $meeting->start_time = $meeting->occurrences[0]['start_time'];
-
-            $meeting->save();
-            $this->logFinishEvent();
         }else{
             $this->logNotFoundEvent();
         }
@@ -163,11 +176,18 @@ class MeetingEventSubscriber extends AbstractEventSubscriber
         if(!empty($model)){
 
             $this->logEvent($event);
+            try{
 
-            $model->status = $status;
-            $model->save();
+                $model->status = $status;
+                $model->save();
 
-            $this->logFinishEvent();
+                $this->logFinishEvent();
+            }catch (\Exception $exception){
+                $this->logFailedEvent($exception);
+            }
+
+
+
 
         }else{
             $this->logNotFoundEvent();

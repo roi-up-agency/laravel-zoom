@@ -3,6 +3,13 @@ namespace RoiUp\Zoom;
 
 use Illuminate\Support\ServiceProvider;
 use RoiUp\Zoom\Commands\SyncHostsCommand;
+use RoiUp\Zoom\Models\Eloquent\Host;
+use RoiUp\Zoom\Models\Eloquent\Meeting;
+use RoiUp\Zoom\Models\Eloquent\Model;
+use RoiUp\Zoom\Models\Eloquent\Occurrence;
+use RoiUp\Zoom\Models\Eloquent\Registrant;
+use RoiUp\Zoom\Models\Zoom\User;
+use RoiUp\Zoom\Observers\ModelObserver;
 
 class ZoomServiceProvider extends ServiceProvider
 {
@@ -30,6 +37,12 @@ class ZoomServiceProvider extends ServiceProvider
                 SyncHostsCommand::class,
             ]);
         }
+
+        Host::observe(ModelObserver::class);
+        Meeting::observe(ModelObserver::class);
+        Registrant::observe(ModelObserver::class);
+        Occurrence::observe(ModelObserver::class);
+
     }
 
     /**

@@ -30,7 +30,7 @@ class RegistrantLinks{
         if($includeOccurrence){
             $data['occurrence_id'] = $registrant->occurrence_id;
         }
-
+        
         return encrypt(json_encode($data));
     }
 
