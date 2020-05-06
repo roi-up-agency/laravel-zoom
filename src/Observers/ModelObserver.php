@@ -43,7 +43,7 @@ class ModelObserver
         foreach ($model->getDirty() as $key => $value) {
             if($key !== 'updated_at' && $key !== 'created_at'){
                 $changes[$key] = [
-                    'original' => $original[$key],
+                    'original' => isset($original[$key]) ? $original[$key] : 'null',
                     'changes' => $value,
                 ];
             }

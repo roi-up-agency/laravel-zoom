@@ -41,7 +41,7 @@ class Meeting extends Model
         $registrants = Registrant::whereMeetingId($this->zoom_id)->whereRegistrantId($registrantId)->get();
         $occurrences = [];
         foreach ($registrants as $registrant){
-            $occurrences[] = Occurrence::whereOccurrenceId($registrant->occurrence_id)->first();
+            $occurrences[] = Occurrence::whereOccurrenceId($registrant->occurrence_id)->whereMeetingId($this->zoom_id)->first();
         }
 
         return $occurrences;

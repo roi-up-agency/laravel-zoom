@@ -17,15 +17,15 @@ class Occurrence extends Model
     ];
 
     public function registrants(){
-        return $this->hasMany(Registrant::class, 'occurrence_id', 'occurrence_id');
+        return $this->hasMany(Registrant::class, 'occurrence_id', 'occurrence_id')->where('meeting_id', $this->meeting_id);
     }
 
     public function approved(){
-        return $this->hasMany(Registrant::class, 'occurrence_id', 'occurrence_id')->where('status', 'approved');
+        return $this->hasMany(Registrant::class, 'occurrence_id', 'occurrence_id')->where('meeting_id', $this->meeting_id)->where('status', 'approved');
     }
 
     public function denied(){
-        return $this->hasMany(Registrant::class, 'occurrence_id', 'occurrence_id')->where('status', 'denied');
+        return $this->hasMany(Registrant::class, 'occurrence_id', 'occurrence_id')->where('meeting_id', $this->meeting_id)->where('status', 'denied');
     }
 
     public function meeting(){

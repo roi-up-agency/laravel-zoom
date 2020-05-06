@@ -34,7 +34,7 @@ class Registrant extends Model
     }
 
     public function occurrence(){
-        return $this->belongsTo(Occurrence::class, 'occurrence_id', 'occurrence_id');
+        return $this->belongsTo(Occurrence::class, 'occurrence_id', 'occurrence_id')->where('meeting_id', $this->meeting_id);
     }
 
     public function meeting(){

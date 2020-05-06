@@ -11,7 +11,6 @@ use RoiUp\Zoom\Events\Notifications\SendDeleteOccurrence;
 use RoiUp\Zoom\Events\User\UserVerified;
 use RoiUp\Zoom\Models\Eloquent\Host;
 use RoiUp\Zoom\Models\Eloquent\Meeting;
-use RoiUp\Zoom\Models\Eloquent\Meeting as EloquentModel;
 use RoiUp\Zoom\Models\Eloquent\Occurrence;
 
 class MeetingEventSubscriber extends AbstractEventSubscriber
@@ -82,8 +81,10 @@ class MeetingEventSubscriber extends AbstractEventSubscriber
                         continue;
                     }
 
-                    $item->registrants->each(function($registrant){
-                        if($registrant->status !== 'denied'){
+                    $meetingDate = strtotime($item->start_time);
+
+                    $item->registrants->each(function($registrant) use ($meetingDate){
+                        if($registrant->status !== 'denied' && $meetingDate > time()){
                             event(new SendDeleteOccurrence($registrant));
                         }
                         $registrant->delete();
@@ -113,7 +114,7 @@ class MeetingEventSubscriber extends AbstractEventSubscriber
      */
     public function onMeetingUpdated(MeetingUpdated $event) {
 
-        $meeting = EloquentModel::whereZoomId($event->getObject()['id'])->first();
+        $meeting = Meeting::whereZoomId($event->getObject()['id'])->first();
         if(!empty($meeting)) {
             $this->logEvent($event);
             try{
