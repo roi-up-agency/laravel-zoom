@@ -112,7 +112,7 @@ class Webinar extends Request
     public function addPanelists($webinarId, $panelists)
     {
     	$panel = [];
-    	foreach($apnelists as $panelist){
+    	foreach($panelists as $panelist){
     		$panel[] = ['name' => $panelist->name, 'email' => $panelist->email];
     	}
     	return $this->post("webinars/{$webinarId}/panelists", ['panelists' => $panel]);

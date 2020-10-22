@@ -94,7 +94,7 @@ class Meeting extends Request
 
         $removeOccurrences = false;
 
-        if($actualMeeting->recurrence !== json_encode($meeting->recurrence) || $actualMeeting->start_time !== $meeting->start_time){
+	if($actualMeeting->recurrence !== json_encode($meeting->recurrence) || $actualMeeting->start_time !== $meeting->start_time || $actualMeeting->duration !== $meeting->duration){
             $removeOccurrences = true;
             foreach($actualMeeting->occurrences as $occurrence){
                 if(RegistrantModel::whereMeetingId($meetingId)->whereOccurrenceId($occurrence->occurrence_id)->whereStatus('approved')->count() > 0){

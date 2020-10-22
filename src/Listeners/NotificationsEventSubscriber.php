@@ -86,32 +86,34 @@ class NotificationsEventSubscriber
          $meeting    = $registrant->meeting;
          $host       = $meeting->host;
 
-         $arrDate = [];
-         foreach($registrant->occurrences as $occurrence){
-             if(is_array($occurrence)){
-                 $occurrence = (object)$occurrence;
-             }
-             $arrDate[] = $this->getFormattedDate($occurrence->start_time);
-         }
-
-         $text = trans('zoom::emails.registration_new_text', ['topic' => $meeting->topic, 'date' => implode(', ', $arrDate) . ' ' . $meeting->timezone, 'registrant_email' => $registrant->email, 'registrant_name' => $registrant->fullName()]);
-
-         $data = [
-             'name'         => $host->first_name . ' ' . $host->last_name,
-             'text'         => $text,
-         ];
-
          if($meeting->ifManualApproveNeeded()){
+             $arrDate = [];
+             foreach($registrant->occurrences as $occurrence){
+                 if(is_array($occurrence)){
+                     $occurrence = (object)$occurrence;
+                 }
+                 $arrDate[] = $this->getFormattedDate($occurrence->start_time);
+             }
+
+             $text = trans('zoom::emails.registration_new_text', ['topic' => $meeting->topic, 'date' => implode(', ', $arrDate) . ' ' . $meeting->timezone, 'registrant_email' => $registrant->email, 'registrant_name' => $registrant->fullName()]);
+
+             $data = [
+                 'name'         => $host->first_name . ' ' . $host->last_name,
+                 'text'         => $text,
+             ];
+
+
              $data['approveLink']  = RegistrantLinks::generateActionLink('approve', $registrant, $meeting->getSetting(ZoomMeeting::SETTINGS_KEY_REGISTRATION_TYPE) === ZoomMeeting::SETTINGS_REGISTRATION_TYPE_ONCE_ONE_OCCURRENCES ? true : false);
              $data['denyLink']     = RegistrantLinks::generateActionLink('deny', $registrant, $meeting->getSetting(ZoomMeeting::SETTINGS_KEY_REGISTRATION_TYPE) === ZoomMeeting::SETTINGS_REGISTRATION_TYPE_ONCE_ONE_OCCURRENCES ? true : false);
-         }
-         
-         $data = array_merge($this->initEmailData(), $data);
 
-         $mail = new SimpleEmail($data);
-         $mail->subject = trans('zoom::emails.registration_new_subject', ['topic' => $meeting->topic]);
-         Mail::to($host->email, $host->first_name . ' ' . $host->last_name)->send($mail);
-         $this->logEvent($registrant, $data, MailLog::$REGISTRANT_NEW, $mail->subject, $host->email);
+         
+             $data = array_merge($this->initEmailData(), $data);
+
+             $mail = new SimpleEmail($data);
+             $mail->subject = trans('zoom::emails.registration_new_subject', ['topic' => $meeting->topic]);
+             Mail::to($host->email, $host->first_name . ' ' . $host->last_name)->send($mail);
+             $this->logEvent($registrant, $data, MailLog::$REGISTRANT_NEW, $mail->subject, $host->email);
+         }
      }
 
      public function onSendApproveRegistrant(SendApproveRegistrant $event) {
@@ -233,9 +235,10 @@ class NotificationsEventSubscriber
         return in_array($eventName, $this->overidedListeners);
     }
 
-    private function getFormattedDate($zoomTime){
+    private function getFormattedDate($zoomTime, $timezone = 'Europe/Madrid'){
 
         $format = config('zoom.emails_date_format');
+        date_default_timezone_set($timezone);
 
         return date($format, strtotime($zoomTime));
     }
